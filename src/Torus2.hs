@@ -13,7 +13,7 @@ import           Torus2.Triangles
 
 
 htorus :: Double -> Double -> [(NTriangle,NTriangle)]
-htorus = allTriangles (200,200)
+htorus = allTriangles (400,400)
 
 data Context = Context
     {
@@ -27,7 +27,6 @@ white,black,pink :: Color4 GLfloat
 white      = Color4    1   1   1    1
 black      = Color4    0   0   0    1
 pink       = Color4    1   0   0.5  1
-grey       = Color4    0.1 0.1 0.1  1
 
 display :: Context -> IORef GLdouble -> IORef GLfloat -> DisplayCallback
 display context zoom alpha = do
@@ -124,7 +123,7 @@ idle anim snapshot alpha = do
       s <- get snapshot
       ppmExists <- doesDirectoryExist "./ppm"
       when (ppmExists && s < 360) $ do
-        let ppm = printf "ppm/torus1-%04d.ppm" s
+        let ppm = printf "ppm/torus2-%04d.ppm" s
         (>>=) capturePPM (B.writeFile ppm)
       snapshot $~! (+1)
       alpha $~! (+1)

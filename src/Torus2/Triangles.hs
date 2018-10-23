@@ -2,13 +2,11 @@ module Torus2.Triangles
   (allTriangles, NTriangle)
   where
 import           Graphics.Rendering.OpenGL.GL (Normal3 (..), Vertex3 (..))
-import           Utils.Normals                (triangleNormal)
-import           Data.Array   (Array, (!))
-import qualified Data.Array   as UA
+import           Data.Array                   (Array, (!), array)
+import qualified Data.Array as UA
 
 type Point = (Double, Double, Double)
 type Vector = (Double, Double, Double)
-
 type NPoint = (Vertex3 Double, Normal3 Double)
 type NTriangle = (NPoint, NPoint, NPoint)
 
@@ -21,25 +19,22 @@ vectorToNormal3 (x,y,z) = Normal3 x y z
 fun :: Double -> Double -> Double -> Double -> Point
 fun a nlobes u v = (x,y,z)
   where
-    a1 = pi/2 - (pi/2-a) * cos (u*nlobes)
-    sina1 = sin a1
+    a1 = pi/2 - (pi/2-a) * cos(u*nlobes)
     a2 = u + a*sin(2*u*nlobes)
+    sina1 = sin a1
+    p1 = cos a1
     p2 = sina1 * cos a2
     p3 = sina1 * sin a2
-    p1 = cos a1
     yden = sqrt(2*(1+p1))
-    y1 = (1+p1)/yden
-    y2 = p2/yden
-    y3 = p3/yden
     cosphi = cos v
     sinphi = sin v
-    x4 = cosphi * y1
-    x3 = sinphi * y1
-    x2 = cosphi*y2 - sinphi*y3
-    x1 = cosphi*y3 + sinphi*y2
-    x = x1/(1-x4)
-    y = x2/(1-x4)
-    z = x3/(1-x4)
+    x4 = cosphi * (1+p1)
+    x3 = sinphi * (1+p1)
+    x2 = cosphi*p2 - sinphi*p3
+    x1 = cosphi*p3 + sinphi*p2
+    x = x1/(yden-x4)
+    y = x2/(yden-x4)
+    z = x3/(yden-x4)
 
 frac :: Int -> Int -> Double
 frac p q = realToFrac p / realToFrac q
@@ -58,8 +53,8 @@ triangleNormal0 ((x1,x2,x3), (y1,y2,y3), (z1,z2,z3)) = (a/norm,b/norm,c/norm)
   where
     (a, b, c) = crossProd (z1-x1, z2-x2, z3-x3) (y1-x1, y2-x2, y3-x3) 
     crossProd (a1,a2,a3) (b1,b2,b3) = (a2*b3-a3*b2, a3*b1-a1*b3, a1*b2-a2*b1)
-    norm = sqrt (a*a + b*b + c*c)
-    
+    norm = sqrt(a*a + b*b + c*c)
+
 averageNormals :: Vector -> Vector -> Vector -> Vector -> Vector -> Vector -> Vector
 averageNormals (x1,y1,z1) (x2,y2,z2) (x3,y3,z3) (x4,y4,z4) (x5,y5,z5) (x6,y6,z6) = 
   ((x1+x2+x3+x4+x5+x6)/6, (y1+y2+y3+y4+y5+y6)/6, (z1+z2+z3+z4+z5+z6)/6)
@@ -90,7 +85,8 @@ allNormals vertices = UA.array bounds associations
 trianglesij :: Array (Int,Int) Point -> Array (Int,Int) Vector 
             -> (Int, Int) -> (Int, Int)
             -> (NTriangle, NTriangle)
-trianglesij vertices normals (nu,nv) (i,j) = (((a,na), (b,nb), (c,nc)), ((c,nc), (b,nb), (d,nd)))
+trianglesij vertices normals (nu,nv) (i,j) = 
+  (((a,na), (b,nb), (c,nc)), ((c,nc), (b,nb), (d,nd)))
   where
   ip1 = if i==nu-1 then 0 else i+1
   jp1 = if j==nv-1 then 0 else j+1
@@ -105,7 +101,7 @@ trianglesij vertices normals (nu,nv) (i,j) = (((a,na), (b,nb), (c,nc)), ((c,nc),
 
 allTriangles :: (Int,Int) -> Double -> Double -> [(NTriangle,NTriangle)]
 allTriangles nunv@(nu,nv) a nlobes =
-  map (\(i,j) -> trianglesij vertices normals nunv (i,j)) indices
+  map (trianglesij vertices normals nunv) indices
   where
   vertices = allVertices (fun a nlobes) nunv
   normals = allNormals vertices
