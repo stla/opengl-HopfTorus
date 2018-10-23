@@ -22,6 +22,8 @@ library
                      , Torus2.Triangles
                      , Colors.Palettes
                      , Colors.Color
+                     , Torus3
+                     , Torus3.Triangles
   build-depends:       base >= 4.7 && < 5
                      , OpenGL
                      , GLUT

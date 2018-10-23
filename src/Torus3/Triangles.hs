@@ -2,7 +2,7 @@ module Torus3.Triangles
   (allTriangles, NTriangle)
   where
 import           Graphics.Rendering.OpenGL.GL (Normal3 (..), Vertex3 (..), Color4 (..), GLfloat)
-import           Data.Array                   (Array, (!), array)
+import           Data.Array                   (Array, (!), array, elems)
 import qualified Data.Array as A
 import           Colors.Color
 
@@ -80,27 +80,38 @@ allNormals vertices = array bounds associations
   g (i,j) = ((i,j), normalij vertices (i,j))
   associations = map g indices
 
+norm :: Point -> Double
+norm (x,y,z) = sqrt(x*x + y*y + z*z)
+
 trianglesij :: Array (Int,Int) Point -> Array (Int,Int) Vector 
+            -> (Double, Double)
             -> (Int, Int) -> (Int, Int)
             -> (NTriangle, NTriangle)
-trianglesij vertices normals (nu,nv) (i,j) = 
-  (((a,na), (b,nb), (c,nc)), ((c,nc), (b,nb), (d,nd)))
+trianglesij vertices normals (minNorm,maxNorm) (nu,nv) (i,j) = 
+  (((a,na,cola), (b,nb,colb), (c,nc,colc)), ((c,nc,colc), (b,nb,colb), (d,nd,cold)))
   where
   ip1 = if i==nu-1 then 0 else i+1
   jp1 = if j==nv-1 then 0 else j+1
   a = pointToVertex3 $ vertices ! (i,j)
   na = vectorToNormal3 $ normals ! (i,j)
+  cola = color' ((norm (vertices ! (i,j)) - minNorm) / (maxNorm - minNorm))
   c = pointToVertex3 $ vertices ! (i,jp1)
   nc = vectorToNormal3 $ normals ! (i,jp1)
+  colc = color' ((norm (vertices ! (i,jp1)) - minNorm) / (maxNorm - minNorm))
   d = pointToVertex3 $ vertices ! (ip1,jp1)
   nd = vectorToNormal3 $ normals ! (ip1,jp1)
+  cold = color' ((norm (vertices ! (ip1,jp1)) - minNorm) / (maxNorm - minNorm))
   b = pointToVertex3 $ vertices ! (ip1,j)
   nb = vectorToNormal3 $ normals ! (ip1,j)
+  colb = color' ((norm (vertices ! (ip1,j)) - minNorm) / (maxNorm - minNorm))
 
 allTriangles :: (Int,Int) -> Double -> Double -> [(NTriangle,NTriangle)]
 allTriangles nunv@(nu,nv) a nlobes =
-  map (trianglesij vertices normals nunv) indices
+  map (trianglesij vertices normals (minNorm,maxNorm) nunv) indices
   where
   vertices = allVertices (fun a nlobes) nunv
   normals = allNormals vertices
+  norms = map norm (elems vertices)
+  minNorm = minimum norms
+  maxNorm = maximum norms
   indices = [(i,j) | i <- [0 .. nu-1], j <- [0 .. nv-1]]
