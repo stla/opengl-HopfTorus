@@ -1,4 +1,4 @@
-module Torus1
+module Torus2
   (main)
   where
 import           Control.Monad                     (when)
@@ -9,24 +9,25 @@ import           Graphics.Rendering.OpenGL.GL
 import           Graphics.UI.GLUT
 import           System.Directory                  (doesDirectoryExist)
 import           Text.Printf
-import           Torus1.Triangles
+import           Torus2.Triangles
 
 
-htorus :: Double -> Double -> [NTriangle]
-htorus = allTriangles 200
+htorus :: Double -> Double -> [(NTriangle,NTriangle)]
+htorus = allTriangles (200,200)
 
 data Context = Context
     {
       contextRot1      :: IORef GLfloat
     , contextRot2      :: IORef GLfloat
     , contextRot3      :: IORef GLfloat
-    , contextTriangles :: IORef [NTriangle]
+    , contextTriangles :: IORef [(NTriangle,NTriangle)]
     }
 
 white,black,pink :: Color4 GLfloat
-white      = Color4    1    1    1    1
-black      = Color4    0    0    0    1
-pink       = Color4    1    0  0.5    1
+white      = Color4    1   1   1    1
+black      = Color4    0   0   0    1
+pink       = Color4    1   0   0.5  1
+grey       = Color4    0.1 0.1 0.1  1
 
 display :: Context -> IORef GLdouble -> IORef GLfloat -> DisplayCallback
 display context zoom alpha = do
@@ -35,6 +36,9 @@ display context zoom alpha = do
   r2 <- get (contextRot2 context)
   r3 <- get (contextRot3 context)
   triangles <- get (contextTriangles context)
+  let triangles' = unzip triangles
+      triangles1 = fst triangles'
+      triangles2 = snd triangles'
   z <- get zoom
   alpha' <- get alpha
   loadIdentity
@@ -45,14 +49,18 @@ display context zoom alpha = do
   rotate r3 $ Vector3 0 0 1
   rotate alpha' $ Vector3 1 1 1
   renderPrimitive Triangles $
-    mapM_ drawTriangle triangles
+    mapM_ drawTriangle triangles1
+  renderPrimitive Triangles $
+    mapM_ drawTriangle triangles2
   swapBuffers
   where
-    drawTriangle ((v1,v2,v3),norm) = do
+    drawTriangle ((v1,n1),(v2,n2),(v3,n3)) = do
       materialDiffuse Front $= pink
-      normal norm
+      normal n1
       vertex v1
+      normal n2
       vertex v2
+      normal n3
       vertex v3
 
 resize :: GLdouble -> Size -> IO ()
@@ -72,7 +80,7 @@ keyboard :: IORef GLfloat -> IORef GLfloat -> IORef GLfloat -- rotations
          -> IORef Double -- nlobes
          -> IORef Double -- A
          -> IORef Bool -- animation
-         -> IORef [NTriangle]
+         -> IORef [(NTriangle,NTriangle)]
          -> KeyboardCallback
 keyboard rot1 rot2 rot3 zoom nlobes a anim triangles c _ = do
   case c of
@@ -133,7 +141,7 @@ main = do
   materialAmbient Front $= black
   lighting $= Enabled
   light (Light 0) $= Enabled
-  position (Light 0) $= Vertex4 0 0 (-500) 1
+  position (Light 0) $= Vertex4 0 0 (-100) 1
   ambient (Light 0) $= white
   diffuse (Light 0) $= white
   specular (Light 0) $= white

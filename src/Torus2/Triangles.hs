@@ -54,11 +54,12 @@ allVertices f (nu, nv) = UA.array ((0,0), (nu-1,nv-1)) associations
   associations = map g indices
 
 triangleNormal0 :: (Point, Point, Point) -> Vector
-triangleNormal0 ((x1,x2,x3), (y1,y2,y3), (z1,z2,z3)) = (a,b,c)
+triangleNormal0 ((x1,x2,x3), (y1,y2,y3), (z1,z2,z3)) = (a/norm,b/norm,c/norm)
   where
-    (a, b, c) = crossProd (y1-x1, y2-x2, y3-x3) (z1-x1, z2-x2, z3-x3)
+    (a, b, c) = crossProd (z1-x1, z2-x2, z3-x3) (y1-x1, y2-x2, y3-x3) 
     crossProd (a1,a2,a3) (b1,b2,b3) = (a2*b3-a3*b2, a3*b1-a1*b3, a1*b2-a2*b1)
-
+    norm = sqrt (a*a + b*b + c*c)
+    
 averageNormals :: Vector -> Vector -> Vector -> Vector -> Vector -> Vector -> Vector
 averageNormals (x1,y1,z1) (x2,y2,z2) (x3,y3,z3) (x4,y4,z4) (x5,y5,z5) (x6,y6,z6) = 
   ((x1+x2+x3+x4+x5+x6)/6, (y1+y2+y3+y4+y5+y6)/6, (z1+z2+z3+z4+z5+z6)/6)
@@ -87,23 +88,25 @@ allNormals vertices = UA.array bounds associations
   associations = map g indices
 
 trianglesij :: Array (Int,Int) Point -> Array (Int,Int) Vector 
-            -> (Int, Int)
+            -> (Int, Int) -> (Int, Int)
             -> (NTriangle, NTriangle)
-trianglesij vertices normals (i,j) = (((a,na), (b,nb), (c,nc)), ((c,nc), (b,nb), (d,nd)))
+trianglesij vertices normals (nu,nv) (i,j) = (((a,na), (b,nb), (c,nc)), ((c,nc), (b,nb), (d,nd)))
   where
+  ip1 = if i==nu-1 then 0 else i+1
+  jp1 = if j==nv-1 then 0 else j+1
   a = pointToVertex3 $ vertices ! (i,j)
   na = vectorToNormal3 $ normals ! (i,j)
-  c = pointToVertex3 $ vertices ! (i,j+1)
-  nc = vectorToNormal3 $ normals ! (i,j+1)
-  d = pointToVertex3 $ vertices ! (i+1,j+1)
-  nd = vectorToNormal3 $ normals ! (i+1,j+1)
-  b = pointToVertex3 $ vertices ! (i+1,j)
-  nb = vectorToNormal3 $ normals ! (i+1,j)
+  c = pointToVertex3 $ vertices ! (i,jp1)
+  nc = vectorToNormal3 $ normals ! (i,jp1)
+  d = pointToVertex3 $ vertices ! (ip1,jp1)
+  nd = vectorToNormal3 $ normals ! (ip1,jp1)
+  b = pointToVertex3 $ vertices ! (ip1,j)
+  nb = vectorToNormal3 $ normals ! (ip1,j)
 
 allTriangles :: (Int,Int) -> Double -> Double -> [(NTriangle,NTriangle)]
 allTriangles nunv@(nu,nv) a nlobes =
-  map (\(i,j) -> trianglesij vertices normals (i,j)) indices
+  map (\(i,j) -> trianglesij vertices normals nunv (i,j)) indices
   where
   vertices = allVertices (fun a nlobes) nunv
   normals = allNormals vertices
-  indices = [(i,j) | i <- [0 .. nu-2], j <- [0 .. nv-2]]
+  indices = [(i,j) | i <- [0 .. nu-1], j <- [0 .. nv-1]]

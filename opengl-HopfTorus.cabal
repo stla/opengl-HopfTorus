@@ -18,7 +18,7 @@ library
   exposed-modules:     Torus1
                      , Torus1.Triangles
                      , Utils.Normals
---                     , Torus2
+                     , Torus2
                      , Torus2.Triangles
   build-depends:       base >= 4.7 && < 5
                      , OpenGL
