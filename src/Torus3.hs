@@ -125,7 +125,7 @@ idle anim snapshot alpha = do
       s <- get snapshot
       ppmExists <- doesDirectoryExist "./ppm"
       when (ppmExists && s < 360) $ do
-        let ppm = printf "ppm/torus2-%04d.ppm" s
+        let ppm = printf "ppm/torus3-%04d.ppm" s
         (>>=) capturePPM (B.writeFile ppm)
       snapshot $~! (+1)
       alpha $~! (+1)
