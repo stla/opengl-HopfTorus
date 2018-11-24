@@ -49,8 +49,8 @@ blue       = Color4    0    0    1    1
 
 tmatsAndHeights :: [([GLfloat], GLdouble)]
 tmatsAndHeights = 
-    map (second realToFrac . transfoMatrixCone (realToFrac r2) cr1)
-                   points
+    map (second realToFrac . transfoMatrixCone cr1)
+         points
 
 display :: DisplayCallback
 display = do

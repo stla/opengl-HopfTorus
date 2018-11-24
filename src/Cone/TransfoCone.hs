@@ -4,8 +4,8 @@ import           Data.Foldable (toList)
 import           Linear
 import           Control.Lens
 
-transfoMatrixCone :: (Real a, Floating a) => a -> V3 a -> V3 a -> ([a], a)
-transfoMatrixCone r2 cr1 cr2 = 
+transfoMatrixCone :: (Real a, Floating a) => V3 a -> V3 a -> ([a], a)
+transfoMatrixCone cr1 cr2 = 
   (concatMap toList (toList (mkTransformationMat m trans)), height)
   where
     normal' = cr2 ^-^ cr1

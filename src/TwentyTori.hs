@@ -1,7 +1,7 @@
-module Torus2
+module TwentyTori
   (main)
   where
-import           Control.Monad                     (when)
+import           Control.Monad                     (when, forM_)
 import qualified Data.ByteString                   as B
 import           Data.IORef
 import           Graphics.Rendering.OpenGL.Capture (capturePPM)
@@ -10,10 +10,19 @@ import           Graphics.UI.GLUT
 import           System.Directory                  (doesDirectoryExist)
 import           Text.Printf
 import           Torus2.Triangles
-import           Utils.Normals
+import           Cone.TransfoCone
+import           TranslateReorient.TranslateReorient
+import           Linear                            (V3(..))
+import           Data.Tuple.Extra                  (second)
 
 htorus :: Double -> Double -> [(NTriangle,NTriangle)]
-htorus = allTriangles (400,400)
+htorus = allTriangles (200,200)
+
+scaleVector3 :: Double -> Vertex3 Double -> Vertex3 Double
+scaleVector3 s (Vertex3 x y z) = Vertex3 (s*x) (s*y) (s*z)
+
+scaling :: Double
+scaling = 0.03
 
 data Context = Context
     {
@@ -27,6 +36,46 @@ white,black,pink :: Color4 GLfloat
 white      = Color4    1   1   1    1
 black      = Color4    0   0   0    1
 pink       = Color4    1   0   0.5  1
+
+phi,a,b,c :: GLfloat
+phi = (1 + sqrt 5) / 2
+a = 1 / sqrt 3
+b = a / phi
+c = a * phi
+
+points :: [V3 GLfloat]
+points = 
+   [V3 a a a,
+    V3 a a (-a),
+    V3 a (-a) a,
+    V3 (-a) (-a) a,
+    V3 (-a) a (-a),
+    V3 (-a) a a,
+    V3 0 b (-c),
+    V3 0 (-b) (-c),
+    V3 0 (-b) c,
+    V3 c 0 (-b),
+    V3 (-c) 0 (-b),
+    V3 (-c) 0 b,
+    V3 b c 0,
+    V3 b (-c) 0,
+    V3 (-b) (-c) 0,
+    V3 (-b) c 0,
+    V3 0 b c,
+    V3 a (-a) (-a),
+    V3 c 0 b,
+    V3 (-a) (-a) (-a)]
+
+tmatrices :: [[GLfloat]]
+tmatrices = 
+    map (translateAndReorient (V3 0 0 1)) points
+
+o :: V3 GLfloat
+o = V3 0 0 0
+
+tmatsAndHeights :: [([GLfloat], GLdouble)]
+tmatsAndHeights = 
+    map (second realToFrac . transfoMatrixCone o) points
 
 display :: Context -> IORef GLdouble -> IORef GLfloat -> DisplayCallback
 display context zoom alpha = do
@@ -46,21 +95,32 @@ display context zoom alpha = do
   rotate r1 $ Vector3 1 0 0
   rotate r2 $ Vector3 0 1 0
   rotate r3 $ Vector3 0 0 1
-  rotate alpha' $ Vector3 1 1 1
-  renderPrimitive Triangles $
-    mapM_ drawTriangle triangles1
-  renderPrimitive Triangles $
-    mapM_ drawTriangle triangles2
-  swapBuffers
-  where
-    drawTriangle ((v1,n1),(v2,n2),(v3,n3)) = do
+--   preservingMatrix $ do
+--     materialDiffuse Front $= pink
+--     renderObject Solid $ Cone 0.1 1 16 16
+  forM_ tmatsAndHeights $ \tmatAndHeight ->
+    preservingMatrix $ do
+      m' <- newMatrix RowMajor (fst tmatAndHeight) :: IO (GLmatrix GLfloat)
+      multMatrix m'
       materialDiffuse Front $= pink
-      normal $ negateNormal n1
-      vertex v1
-      normal $ negateNormal n3
-      vertex v3
-      normal $ negateNormal n2
-      vertex v2
+      renderObject Solid $ Cone 0.05 (snd tmatAndHeight) 16 16
+  forM_ tmatrices $ \tmatrix ->
+    preservingMatrix $ do
+      m <- newMatrix RowMajor tmatrix :: IO (GLmatrix GLfloat)
+      multMatrix m
+      rotate alpha' $ Vector3 0 0 1
+      materialDiffuse Front $= pink
+      renderPrimitive Triangles $ mapM_ drawTriangle triangles1
+      renderPrimitive Triangles $ mapM_ drawTriangle triangles2
+  swapBuffers
+    where
+    drawTriangle ((v1,n1),(v2,n2),(v3,n3)) = do
+      normal n1
+      vertex (scaleVector3 scaling v1)
+      normal n3
+      vertex (scaleVector3 scaling v3)
+      normal n2
+      vertex (scaleVector3 scaling v2)
 
 resize :: GLdouble -> Size -> IO ()
 resize zoom s@(Size w h) = do
@@ -68,7 +128,7 @@ resize zoom s@(Size w h) = do
   matrixMode $= Projection
   loadIdentity
   perspective 45.0 (w'/h') 1.0 100.0
-  lookAt (Vertex3 0 0 (24+zoom)) (Vertex3 0 0 0) (Vector3 0 1 0)
+  lookAt (Vertex3 0 0 (-3.6+zoom)) (Vertex3 0 0 0) (Vector3 0 1 0)
   matrixMode $= Modelview 0
   where
     w' = realToFrac w
@@ -123,7 +183,7 @@ idle anim snapshot alpha = do
       s <- get snapshot
       ppmExists <- doesDirectoryExist "./ppm"
       when (ppmExists && s < 360) $ do
-        let ppm = printf "ppm/torus2-%04d.ppm" s
+        let ppm = printf "ppm/twentytori-%04d.ppm" s
         (>>=) capturePPM (B.writeFile ppm)
       snapshot $~! (+1)
       alpha $~! (+1)
@@ -141,9 +201,9 @@ main = do
   lighting $= Enabled
   light (Light 0) $= Enabled
   position (Light 0) $= Vertex4 0 0 (-100) 1
-  ambient (Light 0) $= white
+  ambient (Light 0) $= black
   diffuse (Light 0) $= white
-  specular (Light 0) $= white
+  specular (Light 0) $= black
   depthFunc $= Just Less
   shadeModel $= Smooth
   rot1 <- newIORef 0.0
