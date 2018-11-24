@@ -26,6 +26,7 @@ library
                      , Torus3.Triangles
                      , Cone.TransfoCone
                      , Cone.TestTransfoCone
+                     , TranslateReorient.TranslateReorient
   build-depends:       base >= 4.7 && < 5
                      , OpenGL
                      , GLUT

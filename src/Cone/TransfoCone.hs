@@ -10,11 +10,13 @@ transfoMatrixCone r2 cr1 cr2 =
   where
     normal' = cr2 ^-^ cr1
     height = norm normal'
-    trans = cr1 ^-^ cr2 -- V3 0 0 height
+    trans = cr1 ^-^ cr2 
     normal = normal' ^/ height
     nx = normal ^. _x
     ny = normal ^. _y
-    s = sqrt(nx*nx + ny*ny) -- TODO: case s=0
+    s = sqrt(nx*nx + ny*ny) 
     u = V3 (ny/s) (-nx/s) 0
     v = cross normal u 
-    m = transpose $ V3 u v normal
+    m = if s == 0 
+          then V3 (V3 1 0 0) (V3 0 1 0) (V3 0 0 1)
+          else transpose $ V3 u v normal
