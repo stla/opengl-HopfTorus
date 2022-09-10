@@ -1,7 +1,7 @@
 # opengl-HopfTorus
 
-[![gfycat](https://thumbs.gfycat.com/DamagedEminentFunnelweaverspider-size_restricted.gif)](https://gfycat.com/DamagedEminentFunnelweaverspider)
+![](https://raw.githubusercontent.com/stla/opengl-HopfTorus/master/gifs/Torus2.gif)
 
-[![gfycat](https://thumbs.gfycat.com/DismalKindAngelfish-size_restricted.gif)](https://gfycat.com/DismalKindAngelfish)
+![](https://raw.githubusercontent.com/stla/opengl-HopfTorus/master/gifs/Torus3.gif)
 
-[![gfycat](https://thumbs.gfycat.com/ValidNervousBlackrhino-size_restricted.gif)](https://gfycat.com/ValidNervousBlackrhino)
+![](https://raw.githubusercontent.com/stla/opengl-HopfTorus/master/gifs/TwentyTori.gif)
